@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>12621 &middot; Ticket Reservation — Linked List Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0d2748;
+    --navy-deep:#081a32;
+    --paper:#f4efe3;
+    --paper-dim:#e7e0cf;
+    --saffron:#e0a13a;
+    --saffron-deep:#b8792a;
+    --signal-green:#2f7d4f;
+    --signal-green-bg:#e4f1e8;
+    --signal-amber:#c07a1e;
+    --signal-amber-bg:#faedd6;
+    --signal-red:#a83b32;
+    --signal-red-bg:#f6e3e0;
+    --ink:#1c2430;
+    --ink-soft:#5b6270;
+    --rail:#c9c0aa;
+    --disp-font:'Space Grotesk',sans-serif;
+    --body-font:'Inter',sans-serif;
+    --mono-font:'Share Tech Mono',monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body-font);}
+  ::selection{background:var(--saffron);color:var(--navy-deep);}
+
+  /* ---------- hero / split-flap board ---------- */
+  .hero{
+    background:var(--navy);
+    color:var(--paper);
+    padding:34px 28px 26px;
+    position:relative;
+    overflow:hidden;
+  }
+  .hero::after{
+    content:"";
+    position:absolute; inset:0;
+    background:repeating-linear-gradient(180deg, rgba(255,255,255,.02) 0 2px, transparent 2px 4px);
+    pointer-events:none;
+  }
+  .hero-top{
+    display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:14px;
+    max-width:1180px; margin:0 auto 22px;
+  }
+  .train-id{font-family:var(--mono-font); color:var(--saffron); font-size:15px; letter-spacing:.08em;}
+  .train-name{font-family:var(--disp-font); font-weight:700; font-size:clamp(26px,4vw,40px); margin:2px 0 6px; letter-spacing:-.01em;}
+  .route{font-size:14px; color:#c3cee0;}
+  .route b{color:var(--paper);}
+
+  .board{
+    max-width:1180px; margin:0 auto;
+    background:var(--navy-deep);
+    border:1px solid #1c3a63;
+    border-radius:10px;
+    padding:18px 22px;
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:16px;
+    position:relative;
+  }
+  .board-cell{
+    text-align:center;
+    padding:10px 6px;
+    border-right:1px dashed #274a76;
+  }
+  .board-cell:last-child{border-right:none;}
+  .board-label{font-size:10.5px; text-transform:uppercase; letter-spacing:.14em; color:#8ea3c4; margin-bottom:8px;}
+  .board-value{font-family:var(--mono-font); font-size:clamp(26px,4vw,36px); color:var(--saffron); letter-spacing:.03em; transition:opacity .15s;}
+  .board-value.flip{animation:flip .3s ease;}
+  @keyframes flip{0%{opacity:0; transform:translateY(-6px);}100%{opacity:1; transform:translateY(0);}}
+  .board-sub{font-size:11px; color:#7d90ad; margin-top:4px;}
+  .board-bar{
+    margin-top:8px; height:4px; border-radius:3px; background:#1c3a63; overflow:hidden;
+  }
+  .board-bar i{
+    display:block; height:100%; background:var(--saffron); border-radius:3px; width:0%;
+    transition:width .5s cubic-bezier(.4,0,.2,1);
+  }
+  .live-line{
+    font-size:13px; color:#c3cee0; margin-top:4px; min-height:18px;
+  }
+  .live-line b{color:var(--saffron); font-weight:600;}
+
+  /* ---------- layout ---------- */
+  .wrap{max-width:1180px; margin:0 auto; padding:30px 28px 70px;}
+  .grid{display:grid; grid-template-columns:340px 1fr; gap:26px; align-items:start;}
+  @media (max-width:880px){.grid{grid-template-columns:1fr;}}
+
+  .panel{
+    background:#fff;
+    border:1px solid var(--rail);
+    border-radius:12px;
+    padding:20px 20px 22px;
+    margin-bottom:22px;
+  }
+  .panel h2{
+    font-family:var(--disp-font); font-size:15px; margin:0 0 4px;
+    text-transform:uppercase; letter-spacing:.08em; color:var(--navy);
+    display:flex; align-items:center; gap:8px;
+  }
+  .panel .hint{font-size:12px; color:var(--ink-soft); margin:0 0 16px;}
+
+  label{display:block; font-size:11.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); margin:12px 0 5px;}
+  label:first-of-type{margin-top:0;}
+  input[type=text], input[type=number], select{
+    width:100%; padding:9px 10px; border:1px solid var(--rail); border-radius:7px;
+    font-family:var(--body-font); font-size:13.5px; background:var(--paper); color:var(--ink);
+  }
+  input:focus, select:focus{outline:2px solid var(--saffron); outline-offset:1px;}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+
+  button{
+    font-family:var(--body-font); font-weight:600; font-size:13px;
+    border:none; border-radius:7px; padding:10px 14px; cursor:pointer;
+    transition:transform .08s ease, filter .15s ease;
+  }
+  button:active{transform:translateY(1px);}
+  .btn-primary{background:var(--saffron); color:var(--navy-deep); width:100%; margin-top:16px;}
+  .btn-primary:hover{filter:brightness(1.05);}
+  .btn-outline{background:transparent; border:1.4px solid var(--navy); color:var(--navy);}
+  .btn-outline:hover{background:var(--navy); color:#fff;}
+  .btn-ghost{background:var(--paper-dim); color:var(--ink);}
+  .btn-danger{background:var(--signal-red-bg); color:var(--signal-red); border:1.4px solid var(--signal-red);}
+  .btn-row{display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;}
+  .btn-row button{flex:1; min-width:120px;}
+
+  .status-msg{margin-top:14px; padding:10px 12px; border-radius:7px; font-size:13px; display:none;}
+  .status-msg.show{display:block;}
+  .status-msg.ok{background:var(--signal-green-bg); color:var(--signal-green);}
+  .status-msg.warn{background:var(--signal-amber-bg); color:var(--signal-amber);}
+  .status-msg.err{background:var(--signal-red-bg); color:var(--signal-red);}
+
+  /* ---------- coach visualization ---------- */
+  .track-section{margin-bottom:26px;}
+  .track-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;}
+  .track-title{display:flex; align-items:center; gap:10px;}
+  .chip{
+    font-family:var(--mono-font); font-size:11px; padding:3px 9px; border-radius:20px; letter-spacing:.05em;
+  }
+  .chip.cnf{background:var(--signal-green-bg); color:var(--signal-green);}
+  .chip.rac{background:var(--signal-amber-bg); color:var(--signal-amber);}
+  .chip.wl{background:var(--signal-red-bg); color:var(--signal-red);}
+  .track-title h3{font-family:var(--disp-font); font-size:15px; margin:0; color:var(--navy);}
+  .track-count{font-family:var(--mono-font); font-size:12px; color:var(--ink-soft);}
+
+  .track{
+    background:linear-gradient(var(--paper-dim),var(--paper-dim)) 0 34px/100% 4px no-repeat, transparent;
+    padding:6px 4px 14px;
+    display:flex; align-items:flex-start; gap:0; overflow-x:auto;
+    min-height:96px;
+  }
+  .coach-line{display:flex; align-items:flex-start;}
+  .coach{
+    flex:0 0 auto; width:128px; margin-right:2px;
+    border-radius:8px 8px 4px 4px;
+    padding:8px 9px 10px;
+    position:relative;
+    font-size:11px;
+    box-shadow:0 1px 0 rgba(0,0,0,.05);
+  }
+  .coach.cnf{background:var(--signal-green-bg); border:1.4px solid #9cc9ab;}
+  .coach.rac{background:var(--signal-amber-bg); border:1.4px solid #e3c07f;}
+  .coach.wl{background:var(--signal-red-bg); border:1.4px solid #dda69f;}
+  .coach .code{font-family:var(--mono-font); font-weight:700; font-size:11px; margin-bottom:3px;}
+  .coach.cnf .code{color:var(--signal-green);}
+  .coach.rac .code{color:var(--signal-amber);}
+  .coach.wl .code{color:var(--signal-red);}
+  .coach .pname{font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .coach .pmeta{color:var(--ink-soft); margin-top:2px;}
+  .coach .pnr{font-family:var(--mono-font); font-size:9.5px; color:var(--ink-soft); margin-top:4px;}
+  .coach .wheels{position:absolute; bottom:-6px; left:14px; right:14px; display:flex; justify-content:space-between;}
+  .coach .wheels i{width:8px; height:8px; border-radius:50%; background:var(--navy); display:block; opacity:.55;}
+  .coupler{
+    flex:0 0 auto; width:22px; align-self:center; text-align:center;
+    color:var(--ink-soft); font-size:14px; margin-top:14px;
+  }
+  .empty-track{
+    font-size:12.5px; color:var(--ink-soft); font-style:italic; padding:14px 4px;
+  }
+
+  /* ---------- toast notifications ---------- */
+  .toast-stack{
+    position:fixed; right:20px; bottom:20px; z-index:50;
+    display:flex; flex-direction:column; gap:8px; align-items:flex-end;
+  }
+  .toast{
+    font-family:var(--mono-font); font-size:12.5px; color:#fff;
+    background:var(--navy-deep); border-left:4px solid var(--saffron);
+    padding:10px 14px; border-radius:6px; max-width:340px;
+    box-shadow:0 6px 18px rgba(0,0,0,.18);
+    animation:toastIn .28s ease forwards;
+  }
+  .toast.leave{animation:toastOut .28s ease forwards;}
+  .toast.ok{border-left-color:var(--signal-green);}
+  .toast.warn{border-left-color:var(--signal-amber);}
+  .toast.err{border-left-color:var(--signal-red);}
+  @keyframes toastIn{from{opacity:0; transform:translateX(24px);} to{opacity:1; transform:translateX(0);}}
+  @keyframes toastOut{from{opacity:1; transform:translateX(0);} to{opacity:0; transform:translateX(24px);}}
+
+  /* ---------- coach entrance + highlight animation ---------- */
+  @keyframes coachIn{from{opacity:0; transform:translateY(10px) scale(.96);} to{opacity:1; transform:translateY(0) scale(1);}}
+  .coach{animation:coachIn .35s ease backwards;}
+  .coach:hover{transform:translateY(-3px); transition:transform .15s ease; box-shadow:0 6px 14px rgba(0,0,0,.1);}
+  @keyframes pulseHighlight{
+    0%,100%{box-shadow:0 0 0 0 rgba(224,161,58,.55);}
+    50%{box-shadow:0 0 0 7px rgba(224,161,58,0);}
+  }
+  .coach.highlight{animation:coachIn .35s ease backwards, pulseHighlight 1s ease 2;}
+  .coupler{animation:fadeIn .4s ease backwards;}
+  @keyframes fadeIn{from{opacity:0;} to{opacity:1;}}
+
+  footer{
+    text-align:center; font-size:12px; color:var(--ink-soft); padding:0 20px 40px;
+  }
+  footer a{color:var(--navy);}
+
+  .search-result{
+    margin-top:14px; border:1px dashed var(--rail); border-radius:8px; padding:12px 14px; font-size:13px; display:none;
+  }
+  .search-result.show{display:block;}
+  .search-result .sr-status{font-family:var(--mono-font); font-weight:700; letter-spacing:.04em;}
+
+  /* ---------- legend ---------- */
+  .legend-row{
+    display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+    padding-bottom:16px; margin-bottom:18px; border-bottom:1px solid var(--paper-dim);
+    font-size:12.5px; color:var(--ink-soft);
+  }
+  .legend-item{display:flex; align-items:center; gap:6px;}
+  .dot{width:9px; height:9px; border-radius:50%; display:inline-block;}
+  .dot.cnf{background:var(--signal-green);}
+  .dot.rac{background:var(--signal-amber);}
+  .dot.wl{background:var(--signal-red);}
+  .legend-hint{margin-left:auto; font-size:11.5px; font-style:italic;}
+  .legend-hint code{background:var(--paper-dim); padding:1px 5px; border-radius:4px; font-family:var(--mono-font);}
+
+  /* ---------- interactive coach extras ---------- */
+  .coach{cursor:pointer;}
+  .coach .quick-x{
+    position:absolute; top:4px; right:4px; width:16px; height:16px; border-radius:50%;
+    background:rgba(0,0,0,.08); color:var(--ink-soft); font-size:10px; line-height:16px; text-align:center;
+    opacity:0; transition:opacity .15s ease, background .15s ease;
+  }
+  .coach:hover .quick-x{opacity:1;}
+  .coach .quick-x:hover{background:var(--signal-red); color:#fff;}
+  @keyframes pulsePromoted{
+    0%,100%{box-shadow:0 0 0 0 rgba(47,125,79,.55);}
+    50%{box-shadow:0 0 0 7px rgba(47,125,79,0);}
+  }
+  .coach.promoted{animation:coachIn .35s ease backwards, pulsePromoted 1s ease 2;}
+
+  /* ---------- algorithm step animation highlights ---------- */
+  .coach.comparing{
+    outline:2px solid var(--saffron); outline-offset:2px;
+    transform:translateY(-4px) scale(1.04);
+    transition:transform .18s ease, outline-color .18s ease;
+    z-index:2;
+  }
+  .coach.swapping{
+    outline:2px solid var(--signal-red); outline-offset:2px;
+    animation:swapShake .3s ease;
+    z-index:2;
+  }
+  @keyframes swapShake{
+    0%,100%{transform:translateY(-4px) scale(1.04) rotate(0deg);}
+    30%{transform:translateY(-6px) scale(1.05) rotate(-2deg);}
+    70%{transform:translateY(-6px) scale(1.05) rotate(2deg);}
+  }
+  .track.animating{opacity:.98;}
+  button:disabled{opacity:.45; cursor:not-allowed;}
+  .algo-status{
+    font-family:var(--mono-font); font-size:11.5px; color:var(--saffron-deep);
+    margin-top:10px; min-height:16px;
+  }
+
+  /* ---------- modal ---------- */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(8,20,40,.55);
+    display:none; align-items:center; justify-content:center; z-index:100; padding:20px;
+    animation:overlayIn .18s ease;
+  }
+  .modal-overlay.show{display:flex;}
+  @keyframes overlayIn{from{opacity:0;} to{opacity:1;}}
+  .modal{
+    background:#fff; border-radius:14px; max-width:380px; width:100%;
+    padding:22px 24px 24px; box-shadow:0 20px 50px rgba(0,0,0,.25);
+    animation:modalIn .22s cubic-bezier(.2,.8,.3,1.2);
+  }
+  @keyframes modalIn{from{opacity:0; transform:translateY(14px) scale(.97);} to{opacity:1; transform:translateY(0) scale(1);}}
+  .modal-status{
+    display:inline-block; font-family:var(--mono-font); font-size:11px; font-weight:700;
+    padding:3px 10px; border-radius:20px; letter-spacing:.05em; margin-bottom:10px;
+  }
+  .modal h3{font-family:var(--disp-font); font-size:19px; margin:0 0 4px; color:var(--navy);}
+  .modal .modal-meta{font-size:13px; color:var(--ink-soft); margin-bottom:14px;}
+  .modal-row{display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-top:1px dashed var(--rail); font-size:13px;}
+  .modal-row .k{color:var(--ink-soft);}
+  .modal-row .v{font-family:var(--mono-font); font-weight:600;}
+  .modal-row .v.copyable{cursor:pointer; border-bottom:1px dashed var(--ink-soft);}
+  .modal-actions{display:flex; gap:8px; margin-top:18px;}
+  .modal-actions button{flex:1;}
+  .modal-close{
+    position:absolute; top:14px; right:16px; background:none; border:none; font-size:18px;
+    color:var(--ink-soft); cursor:pointer; padding:2px 6px;
+  }
+  .modal{position:relative;}
+</style>
+</head>
+<body>
+
+  <div class="hero">
+    <div class="hero-top">
+      <div>
+        <div class="train-name">Ticket Reservation</div>
+        <div class="live-line" id="liveLine">Ready when you are — book your first ticket below.</div>
+      </div>
+    </div>
+    <div class="board" id="board">
+      <div class="board-cell">
+        <div class="board-label">Confirmed</div>
+        <div class="board-value" id="bvCnf">0/0</div>
+        <div class="board-bar"><i id="barCnf"></i></div>
+        <div class="board-sub">seats occupied</div>
+      </div>
+      <div class="board-cell">
+        <div class="board-label">RAC</div>
+        <div class="board-value" id="bvRac">0/0</div>
+        <div class="board-bar"><i id="barRac"></i></div>
+        <div class="board-sub">berths shared</div>
+      </div>
+      <div class="board-cell">
+        <div class="board-label">Waiting List</div>
+        <div class="board-value" id="bvWl">0</div>
+        <div class="board-bar"><i id="barWl" style="background:var(--signal-red)"></i></div>
+        <div class="board-sub">queued passengers</div>
+      </div>
+      <div class="board-cell">
+        <div class="board-label">Total Booked</div>
+        <div class="board-value" id="bvTotal">0</div>
+        <div class="board-bar"><i style="width:100%; background:#3a5a86"></i></div>
+        <div class="board-sub">since demo start</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="grid">
+      <!-- LEFT: controls -->
+      <div>
+        <div class="panel">
+          <h2>🎟️ Book a ticket</h2>
+          <p class="hint">Appends a new node to the tail of Confirmed → RAC → Waiting List (whichever has room).</p>
+          <label>Passenger name</label>
+          <input type="text" id="inName" placeholder="e.g. Anjali Nair">
+          <div class="row2">
+            <div>
+              <label>Age</label>
+              <input type="number" id="inAge" min="1" max="110" placeholder="28">
+            </div>
+            <div>
+              <label>Gender</label>
+              <select id="inGender">
+                <option value="F">F</option>
+                <option value="M">M</option>
+                <option value="O">O</option>
+              </select>
+            </div>
+          </div>
+          <label>Berth preference</label>
+          <select id="inBerth">
+            <option>Lower</option>
+            <option>Middle</option>
+            <option>Upper</option>
+            <option>Side-Lower</option>
+            <option>Side-Upper</option>
+          </select>
+          <button class="btn-primary" onclick="handleBook()">Book Ticket</button>
+          <div class="status-msg" id="bookMsg"></div>
+        </div>
+
+        <div class="panel">
+          <h2>🔍 PNR status / cancel</h2>
+          <p class="hint">Search is a linear O(n) walk across the three linked lists — cancelling a Confirmed ticket triggers the chain promotion.</p>
+          <label>PNR number</label>
+          <input type="text" id="inPnr" placeholder="e.g. 2500000001">
+          <div class="btn-row">
+            <button class="btn-outline" onclick="handleSearch()">Search</button>
+            <button class="btn-danger" onclick="handleCancel()">Cancel</button>
+          </div>
+          <div class="search-result" id="searchResult"></div>
+        </div>
+
+        <div class="panel">
+          <h2>⚙️ Algorithms</h2>
+          <p class="hint">Extra DSA operations layered on the same lists — watch them run step-by-step.</p>
+          <div class="btn-row">
+            <button class="btn-ghost algo-btn" onclick="handleSort()">Merge Sort WL by age</button>
+            <button class="btn-ghost algo-btn" onclick="handleBubbleSort()">Bubble Sort RAC by name</button>
+          </div>
+          <div class="btn-row">
+            <button class="btn-ghost algo-btn" onclick="handleReverse()">Reverse Waiting List</button>
+            <button class="btn-ghost algo-btn" onclick="handleFindMiddle()">Find Middle (Confirmed)</button>
+          </div>
+          <div class="btn-row">
+            <button class="btn-ghost" onclick="handleUndo()">Undo last cancel</button>
+            <button class="btn-ghost" onclick="loadSample()">Load sample passengers</button>
+          </div>
+          <div class="btn-row">
+            <button class="btn-ghost" onclick="resetDemo()">Reset demo</button>
+          </div>
+          <div class="algo-status" id="algoStatus"></div>
+        </div>
+      </div>
+
+      <!-- RIGHT: visualization -->
+      <div>
+        <div class="panel">
+          <div class="legend-row">
+            <span class="legend-item"><i class="dot cnf"></i>Confirmed</span>
+            <span class="legend-item"><i class="dot rac"></i>RAC</span>
+            <span class="legend-item"><i class="dot wl"></i>Waiting List</span>
+            <span class="legend-hint">click any coach for details &nbsp;·&nbsp; hover to see its linked-list pointers</span>
+          </div>
+          <div class="track-section">
+            <div class="track-head">
+              <div class="track-title">
+                <span class="chip cnf">CNF</span>
+                <h3>Confirmed — linked list</h3>
+              </div>
+              <span class="track-count" id="cntCnf">0 / 0</span>
+            </div>
+            <div class="track" id="trackCnf"></div>
+          </div>
+
+          <div class="track-section">
+            <div class="track-head">
+              <div class="track-title">
+                <span class="chip rac">RAC</span>
+                <h3>RAC — doubly linked list</h3>
+              </div>
+              <span class="track-count" id="cntRac">0 / 0</span>
+            </div>
+            <div class="track" id="trackRac"></div>
+          </div>
+
+          <div class="track-section" style="margin-bottom:0;">
+            <div class="track-head">
+              <div class="track-title">
+                <span class="chip wl">WL</span>
+                <h3>Waiting List — queue (linked list)</h3>
+              </div>
+              <span class="track-count" id="cntWl">0</span>
+            </div>
+            <div class="track" id="trackWl"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-stack" id="toastStack"></div>
+
+  <div class="modal-overlay" id="modalOverlay" onclick="closeModalOnOverlay(event)">
+    <div class="modal" id="modalBox"></div>
+  </div>
+
+<script>
+/* =====================================================================
+   TRAIN TICKET RESERVATION SYSTEM — LINKED LIST CORE (JavaScript port)
+   This mirrors the C++ implementation 1:1: three singly linked lists
+   (Confirmed / RAC / Waiting), a stack for undo, linear search for
+   PNR lookup, and merge sort for re-ordering the waiting list.
+   ===================================================================== */
+
+/* =====================================================================
+   TRAIN TICKET RESERVATION SYSTEM — LINKED LIST CORE (JavaScript port)
+   Confirmed and Waiting are singly linked lists (Waiting behaves as a
+   FIFO queue). RAC is modeled as a DOUBLY LINKED LIST — fitting, since
+   real RAC berths are literally shared by two paired passengers — so
+   every RAC node also carries a `prev` pointer. That means once a PNR
+   is located, deleting it (or splicing in a promoted passenger) is an
+   O(1) pointer rewire using the node's own prev/next, no re-traversal
+   needed. A stack drives undo, and merge/bubble sort + reversal +
+   Floyd's slow-fast search round out the DSA toolkit.
+   ===================================================================== */
+
+// ---- Node: the linked list node -----------------------------------
+class Node {
+  constructor(pnr, name, age, gender, berth, seatNo, status) {
+    this.pnr = pnr;
+    this.name = name;
+    this.age = age;
+    this.gender = gender;
+    this.berth = berth;
+    this.seatNo = seatNo;
+    this.status = status; // 'CNF' | 'RAC' | 'WL'
+    this.next = null;
+    this.prev = null;     // only maintained for the RAC doubly linked list
+  }
+}
+
+// ---- Reservation system state --------------------------------------
+const CONFIRMED_CAPACITY = 6;
+const RAC_CAPACITY = 4;
+
+let confirmedHead = null, confirmedTail = null, confirmedCount = 0;
+let racHead = null, racTail = null, racCount = 0;         // doubly linked list
+let waitHead = null, waitTail = null, waitCount = 0;
+let historyStack = [];        // STACK for undo (LIFO)
+let pnrCounter = 2500000001;
+let totalBooked = 0;
+
+function generatePNR(){ return pnrCounter++; }
+
+// ---- O(1) append at tail / O(1) detach at head ---------------------
+function appendNode(listName, node){
+  if(listName==='CNF'){
+    if(!confirmedHead){ confirmedHead=confirmedTail=node; } else { confirmedTail.next=node; confirmedTail=node; }
+  } else if(listName==='RAC'){
+    // doubly linked: wire the new tail's prev back to the old tail
+    if(!racHead){ racHead=racTail=node; } else { node.prev=racTail; racTail.next=node; racTail=node; }
+  } else {
+    if(!waitHead){ waitHead=waitTail=node; } else { waitTail.next=node; waitTail=node; }
+  }
+}
+function detachHead(listName){
+  let node=null;
+  if(listName==='CNF'){ node=confirmedHead; if(confirmedHead){ confirmedHead=confirmedHead.next; if(!confirmedHead) confirmedTail=null; } }
+  else if(listName==='RAC'){
+    node=racHead;
+    if(racHead){ racHead=racHead.next; if(racHead) racHead.prev=null; else racTail=null; }
+  }
+  else { node=waitHead; if(waitHead){ waitHead=waitHead.next; if(!waitHead) waitTail=null; } }
+  if(node){ node.next=null; node.prev=null; }
+  return node;
+}
+function renumber(head){
+  let pos=1, p=head;
+  while(p){ p.seatNo=pos++; p=p.next; }
+}
+
+// ---- Booking ---------------------------------------------------------
+function bookTicket(name, age, gender, berth){
+  const pnr = generatePNR();
+  totalBooked++;
+  if(confirmedCount < CONFIRMED_CAPACITY){
+    const n = new Node(pnr,name,age,gender,berth,confirmedCount+1,'CNF');
+    appendNode('CNF', n); confirmedCount++;
+    log(`[BOOKED] PNR ${pnr} → CONFIRMED, seat ${n.seatNo}`, 'ok');
+    return {status:'CONFIRMED', node:n};
+  } else if(racCount < RAC_CAPACITY){
+    const n = new Node(pnr,name,age,gender,berth,racCount+1,'RAC');
+    appendNode('RAC', n); racCount++;
+    log(`[BOOKED] PNR ${pnr} → RAC ${n.seatNo}`, 'warn');
+    return {status:'RAC', node:n};
+  } else {
+    waitCount++;
+    const n = new Node(pnr,name,age,gender,berth,waitCount,'WL');
+    appendNode('WL', n);
+    log(`[BOOKED] PNR ${pnr} → WAITING LIST (WL${n.seatNo})`, 'err');
+    return {status:'WAITING', node:n};
+  }
+}
+
+// ---- Linear search across all three lists, O(n) ----------------------
+function searchByPNR(pnr){
+  for(let p=confirmedHead;p;p=p.next) if(p.pnr===pnr) return p;
+  for(let p=racHead;p;p=p.next) if(p.pnr===pnr) return p;
+  for(let p=waitHead;p;p=p.next) if(p.pnr===pnr) return p;
+  return null;
+}
+
+// ---- Cancellation with chain promotion (RAC->CNF, WL->RAC) -----------
+function removeFromList(listName, pnr){
+  let head = listName==='CNF'?confirmedHead:listName==='RAC'?racHead:waitHead;
+  let prev=null, curr=head;
+  while(curr && curr.pnr!==pnr){ prev=curr; curr=curr.next; }
+  if(!curr) return null;
+  if(prev) prev.next=curr.next; else {
+    if(listName==='CNF') confirmedHead=curr.next;
+    else if(listName==='RAC') racHead=curr.next;
+    else waitHead=curr.next;
+  }
+  if(listName==='CNF' && curr===confirmedTail) confirmedTail=prev;
+  if(listName==='RAC' && curr===racTail) racTail=prev;
+  if(listName==='WL' && curr===waitTail) waitTail=prev;
+  // doubly linked list: rewire the next node's back-pointer using curr's
+  // own prev link (this is the O(1) part — no need to re-traverse)
+  if(listName==='RAC' && curr.next) curr.next.prev = curr.prev;
+  curr.next=null; curr.prev=null;
+  return curr;
+}
+
+function cancelTicket(pnr){
+  const promoted = [];
+  let node = removeFromList('CNF', pnr);
+  if(node){
+    confirmedCount--;
+    historyStack.push(node);
+    renumber(confirmedHead);
+    log(`[CANCELLED] PNR ${pnr} (${node.name}) — was CONFIRMED, seat freed`, 'err');
+
+    if(racHead){
+      const promotedNode = detachHead('RAC'); racCount--;
+      promotedNode.status='CNF'; appendNode('CNF', promotedNode); confirmedCount++;
+      renumber(confirmedHead); renumber(racHead);
+      promoted.push(promotedNode.pnr);
+      log(`[PROMOTED] PNR ${promotedNode.pnr} (${promotedNode.name}) : RAC → CONFIRMED, seat ${promotedNode.seatNo}`, 'ok');
+
+      if(waitHead){
+        const promotedWL = detachHead('WL'); waitCount--;
+        promotedWL.status='RAC'; appendNode('RAC', promotedWL); racCount++;
+        renumber(racHead); renumber(waitHead);
+        promoted.push(promotedWL.pnr);
+        log(`[PROMOTED] PNR ${promotedWL.pnr} (${promotedWL.name}) : WAITING → RAC ${promotedWL.seatNo}`, 'ok');
+      }
+    }
+    return {ok:true, promoted};
+  }
+
+  node = removeFromList('RAC', pnr);
+  if(node){
+    racCount--; historyStack.push(node); renumber(racHead);
+    log(`[CANCELLED] PNR ${pnr} (${node.name}) — was RAC`, 'err');
+    if(waitHead){
+      const promotedWL = detachHead('WL'); waitCount--;
+      promotedWL.status='RAC'; appendNode('RAC', promotedWL); racCount++;
+      renumber(racHead); renumber(waitHead);
+      promoted.push(promotedWL.pnr);
+      log(`[PROMOTED] PNR ${promotedWL.pnr} (${promotedWL.name}) : WAITING → RAC ${promotedWL.seatNo}`, 'ok');
+    }
+    return {ok:true, promoted};
+  }
+
+  node = removeFromList('WL', pnr);
+  if(node){
+    waitCount--; historyStack.push(node); renumber(waitHead);
+    log(`[CANCELLED] PNR ${pnr} (${node.name}) — was WAITING LIST`, 'err');
+    return {ok:true, promoted};
+  }
+
+  log(`[ERROR] No booking found with PNR ${pnr}`, 'err');
+  return {ok:false, promoted};
+}
+
+// ---- Undo (pop the stack, re-book that passenger) ---------------------
+function undoLastCancellation(){
+  if(historyStack.length===0){ log('[UNDO] Nothing to undo.', 'warn'); return false; }
+  const rec = historyStack.pop();
+  log(`[UNDO] Restoring PNR ${rec.pnr} (${rec.name})...`, 't');
+  bookTicket(rec.name, rec.age, rec.gender, rec.berth);
+  return true;
+}
+
+// ---- Merge sort on the waiting list, by age, O(n log n) — the pure
+// recursive linked-list version (mirrors cpp/ReservationSystem.cpp 1:1).
+// The UI actually runs mergeSortWaitingAnimated() below, which performs
+// an equivalent iterative bottom-up merge so each pass can be animated.
+function getMiddle(head){
+  if(!head) return head;
+  let slow=head, fast=head.next;
+  while(fast && fast.next){ slow=slow.next; fast=fast.next.next; }
+  return slow;
+}
+function mergeTwoSortedByAge(a,b){
+  if(!a) return b;
+  if(!b) return a;
+  if(a.age<=b.age){ a.next=mergeTwoSortedByAge(a.next,b); return a; }
+  else { b.next=mergeTwoSortedByAge(a,b.next); return b; }
+}
+function mergeSortByAge(head){
+  if(!head || !head.next) return head;
+  const mid = getMiddle(head);
+  const second = mid.next;
+  mid.next = null;
+  const left = mergeSortByAge(head);
+  const right = mergeSortByAge(second);
+  return mergeTwoSortedByAge(left,right);
+}
+
+/* =====================================================================
+   UI LAYER — rendering the linked lists as connected train coaches
+   ===================================================================== */
+
+function log(msg, cls){
+  const stack = document.getElementById('toastStack');
+  const toast = document.createElement('div');
+  toast.className = `toast ${cls||''}`;
+  toast.textContent = msg;
+  stack.appendChild(toast);
+  // keep at most 3 toasts on screen at once
+  while(stack.children.length > 3){ stack.removeChild(stack.firstChild); }
+  setTimeout(() => {
+    toast.classList.add('leave');
+    setTimeout(() => toast.remove(), 280);
+  }, 3200);
+}
+
+function coachHTML(node, cls, codePrefix, index, prevNeighbor, nextNeighbor, highlightClass){
+  let tooltip;
+  if(cls==='rac'){
+    const prevInfo = prevNeighbor ? `prev ← PNR ${prevNeighbor.pnr} (${prevNeighbor.name})` : 'prev ← NULL (head)';
+    const nextInfo = nextNeighbor ? `next → PNR ${nextNeighbor.pnr} (${nextNeighbor.name})` : 'next → NULL (tail)';
+    tooltip = `${prevInfo}\n${nextInfo}`;
+  } else {
+    tooltip = nextNeighbor ? `next → PNR ${nextNeighbor.pnr} (${nextNeighbor.name})` : 'next → NULL (end of list)';
+  }
+  const hl = highlightClass ? ` ${highlightClass}` : '';
+  return `<div class="coach ${cls}${hl}" data-pnr="${node.pnr}" title="${escapeHtml(tooltip)}" style="animation-delay:${Math.min(index*45,400)}ms">
+      <button class="quick-x" data-quick-cancel="${node.pnr}" title="Quick-cancel this ticket">✕</button>
+      <div class="code">${codePrefix}${node.seatNo}</div>
+      <div class="pname">${escapeHtml(node.name)}</div>
+      <div class="pmeta">${node.age}${node.gender} · ${escapeHtml(node.berth)}</div>
+      <div class="pnr">PNR ${node.pnr}</div>
+      <div class="wheels"><i></i><i></i></div>
+    </div>`;
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// Renders a track from a plain array of nodes (not the live linked list).
+// Used both for the normal render (array built by walking the list) and
+// for algorithm animations, where the array temporarily represents an
+// in-progress sort/reversal before the real pointers are rebuilt.
+function renderTrackArray(elId, arr, cls, codePrefix, highlightMap){
+  const el = document.getElementById(elId);
+  if(!arr.length){ el.innerHTML = ''; return; }
+  const couplerSymbol = cls==='rac' ? '⇄' : '⊷'; // bidirectional coupler for the DLL, one-way for singly linked
+  let html = '';
+  arr.forEach((node, i) => {
+    if(i>0) html += `<div class="coupler">${couplerSymbol}</div>`;
+    const hl = highlightMap ? highlightMap.get(node.pnr) : null;
+    html += coachHTML(node, cls, codePrefix, i, arr[i-1]||null, arr[i+1]||null, hl);
+  });
+  el.innerHTML = html;
+}
+
+function renderTrack(elId, head, cls, codePrefix, emptyText){
+  const el = document.getElementById(elId);
+  if(!head){ el.innerHTML = `<div class="empty-track">${emptyText}</div>`; return; }
+  const arr = [];
+  for(let p=head;p;p=p.next) arr.push(p);
+  renderTrackArray(elId, arr, cls, codePrefix);
+}
+
+function highlightCoach(pnr, cls){
+  const el = document.querySelector(`.coach[data-pnr="${pnr}"]`);
+  if(!el) return;
+  const c = cls || 'highlight';
+  el.classList.add(c);
+  setTimeout(() => el.classList.remove(c), 2000);
+}
+
+function flashBoard(id){
+  const el = document.getElementById(id);
+  el.classList.remove('flip'); void el.offsetWidth; el.classList.add('flip');
+}
+
+function renderAll(){
+  renderTrack('trackCnf', confirmedHead, 'cnf', 'S', 'No confirmed passengers yet — book a ticket to fill this train.');
+  renderTrack('trackRac', racHead, 'rac', 'RAC', 'RAC list is empty. It fills once Confirmed is full.');
+  renderTrack('trackWl', waitHead, 'wl', 'WL', 'Waiting list is empty. It fills once RAC is full.');
+
+  document.getElementById('cntCnf').textContent = `${confirmedCount} / ${CONFIRMED_CAPACITY}`;
+  document.getElementById('cntRac').textContent = `${racCount} / ${RAC_CAPACITY}`;
+  document.getElementById('cntWl').textContent = `${waitCount}`;
+
+  document.getElementById('bvCnf').textContent = `${confirmedCount}/${CONFIRMED_CAPACITY}`;
+  document.getElementById('bvRac').textContent = `${racCount}/${RAC_CAPACITY}`;
+  document.getElementById('bvWl').textContent = `${waitCount}`;
+  document.getElementById('bvTotal').textContent = `${totalBooked}`;
+  ['bvCnf','bvRac','bvWl','bvTotal'].forEach(flashBoard);
+
+  document.getElementById('barCnf').style.width = `${CONFIRMED_CAPACITY ? (confirmedCount/CONFIRMED_CAPACITY*100) : 0}%`;
+  document.getElementById('barRac').style.width = `${RAC_CAPACITY ? (racCount/RAC_CAPACITY*100) : 0}%`;
+  document.getElementById('barWl').style.width = `${Math.min(waitCount*20,100)}%`;
+
+  updateLiveLine();
+}
+
+function updateLiveLine(){
+  const el = document.getElementById('liveLine');
+  if(totalBooked===0){ el.textContent = 'Ready when you are — book your first ticket below.'; return; }
+  el.innerHTML = `<b>${confirmedCount}</b> confirmed &nbsp;·&nbsp; <b>${racCount}</b> on RAC &nbsp;·&nbsp; <b>${waitCount}</b> waiting — click any coach to inspect or cancel it`;
+}
+
+function showMsg(elId, text, kind){
+  const el = document.getElementById(elId);
+  el.textContent = text;
+  el.className = `status-msg show ${kind}`;
+}
+
+/* =====================================================================
+   ALGORITHM ANIMATIONS — step-by-step playback so you can actually
+   watch the comparisons/swaps/pointer moves happen, not just see the
+   final sorted result. Each animation works on a plain JS array of the
+   *same* node objects (so passenger data isn't duplicated), then
+   rebuilds the real linked list pointers once the animation finishes.
+   ===================================================================== */
+
+let isAnimating = false;
+function sleep(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }
+
+function setAlgoButtonsDisabled(disabled){
+  document.querySelectorAll('.algo-btn').forEach(b => b.disabled = disabled);
+}
+function algoStatus(text){
+  const el = document.getElementById('algoStatus');
+  if(el) el.textContent = text || '';
+}
+
+// Rebuilds the real linked-list pointers (including DLL prev links for
+// RAC) from a finished array, and renumbers seat/RAC/WL positions.
+function rebuildListFromArray(listName, arr){
+  for(let i=0;i<arr.length;i++){
+    arr[i].next = arr[i+1] || null;
+    if(listName==='RAC') arr[i].prev = arr[i-1] || null;
+  }
+  if(listName==='CNF'){ confirmedHead = arr[0]||null; confirmedTail = arr[arr.length-1]||null; renumber(confirmedHead); }
+  else if(listName==='RAC'){ racHead = arr[0]||null; racTail = arr[arr.length-1]||null; renumber(racHead); }
+  else { waitHead = arr[0]||null; waitTail = arr[arr.length-1]||null; renumber(waitHead); }
+}
+
+function mapFromPairs(pairs){
+  const m = new Map();
+  pairs.forEach(([pnr,cls]) => { if(pnr!=null) m.set(pnr, cls); });
+  return m;
+}
+
+// ---- Animated bubble sort: RAC by name, O(n²) --------------------------
+async function bubbleSortRacByNameAnimated(){
+  if(isAnimating){ log('Please wait for the current animation to finish.', 'warn'); return; }
+  if(!racHead || !racHead.next){ log('[SORT] RAC list needs at least 2 passengers to sort.', 'warn'); return; }
+  isAnimating = true; setAlgoButtonsDisabled(true);
+  let arr = []; for(let p=racHead;p;p=p.next) arr.push(p);
+  const n = arr.length;
+  for(let i=0;i<n-1;i++){
+    let swapped = false;
+    for(let j=0;j<n-1-i;j++){
+      algoStatus(`Comparing "${arr[j].name}" and "${arr[j+1].name}"...`);
+      renderTrackArray('trackRac', arr, 'rac', 'RAC', mapFromPairs([[arr[j].pnr,'comparing'],[arr[j+1].pnr,'comparing']]));
+      await sleep(500);
+      if(arr[j].name.localeCompare(arr[j+1].name) > 0){
+        algoStatus(`Swapping "${arr[j].name}" and "${arr[j+1].name}"`);
+        [arr[j], arr[j+1]] = [arr[j+1], arr[j]];
+        renderTrackArray('trackRac', arr, 'rac', 'RAC', mapFromPairs([[arr[j].pnr,'swapping'],[arr[j+1].pnr,'swapping']]));
+        await sleep(450);
+        swapped = true;
+      }
+    }
+    if(!swapped) break;
+  }
+  rebuildListFromArray('RAC', arr);
+  renderAll();
+  algoStatus('');
+  isAnimating = false; setAlgoButtonsDisabled(false);
+  log('[SORTED] RAC list re-ordered alphabetically by name using Bubble Sort — O(n²)', 't');
+}
+
+// ---- Animated merge sort: Waiting List by age, O(n log n) --------------
+function mergeArraysByAge(left, right){
+  const out = []; let li=0, ri=0;
+  while(li<left.length && ri<right.length){
+    if(left[li].age <= right[ri].age) out.push(left[li++]); else out.push(right[ri++]);
+  }
+  return out.concat(left.slice(li), right.slice(ri));
+}
+async function mergeSortWaitingAnimated(){
+  if(isAnimating){ log('Please wait for the current animation to finish.', 'warn'); return; }
+  if(!waitHead || !waitHead.next){ log('[SORT] Waiting list needs at least 2 passengers to sort.', 'warn'); return; }
+  isAnimating = true; setAlgoButtonsDisabled(true);
+  let arr = []; for(let p=waitHead;p;p=p.next) arr.push(p);
+  const n = arr.length;
+  algoStatus('Splitting into runs of size 1...');
+  renderTrackArray('trackWl', arr, 'wl', 'WL');
+  await sleep(500);
+  for(let width=1; width<n; width*=2){
+    let newArr = [];
+    const highlights = [];
+    for(let i=0;i<n;i+=2*width){
+      const left = arr.slice(i, i+width);
+      const right = arr.slice(i+width, i+2*width);
+      const merged = mergeArraysByAge(left, right);
+      merged.forEach(node => highlights.push([node.pnr,'comparing']));
+      newArr.push(...merged);
+    }
+    arr = newArr;
+    algoStatus(`Merged runs of size ${width} → ${Math.min(width*2,n)}`);
+    renderTrackArray('trackWl', arr, 'wl', 'WL', mapFromPairs(highlights));
+    await sleep(650);
+    renderTrackArray('trackWl', arr, 'wl', 'WL');
+    await sleep(150);
+  }
+  rebuildListFromArray('WL', arr);
+  renderAll();
+  algoStatus('');
+  isAnimating = false; setAlgoButtonsDisabled(false);
+  log('[SORTED] Waiting list re-ordered by age (youngest → oldest) using Merge Sort — O(n log n)', 't');
+}
+
+// ---- Animated reversal: Waiting List, O(n), O(1) extra space -----------
+// Genuinely reverses the pointers (not just the display order) using the
+// same 3-pointer technique as reverseList(), one node at a time.
+async function reverseWaitingListAnimated(){
+  if(isAnimating){ log('Please wait for the current animation to finish.', 'warn'); return; }
+  if(!waitHead){ log('[REVERSE] Waiting list is empty — nothing to reverse.', 'warn'); return; }
+  isAnimating = true; setAlgoButtonsDisabled(true);
+  const newTail = waitHead; // the original head will end up as the new tail
+  let prev = null, curr = waitHead;
+  while(curr){
+    const nextTemp = curr.next;
+    algoStatus(`Flipping pointer for "${curr.name}"...`);
+    curr.next = prev; // the actual pointer reversal
+    // rebuild the two visible segments from the real (now partially reversed) pointers
+    const reversedSoFar = []; for(let p=curr;p;p=p.next) reversedSoFar.push(p);
+    const remaining = []; for(let p=nextTemp;p;p=p.next) remaining.push(p);
+    renderTrackArray('trackWl', [...reversedSoFar, ...remaining], 'wl', 'WL', mapFromPairs([[curr.pnr,'swapping']]));
+    await sleep(450);
+    prev = curr;
+    curr = nextTemp;
+  }
+  waitHead = prev;
+  waitTail = newTail;
+  renumber(waitHead);
+  renderAll();
+  algoStatus('');
+  isAnimating = false; setAlgoButtonsDisabled(false);
+  log('[REVERSED] Waiting list reversed in place using 3-pointer iteration — O(n), O(1) extra space', 't');
+}
+
+// ---- Animated Floyd's slow/fast pointer search on Confirmed, O(n) ------
+async function findMiddleConfirmedAnimated(){
+  if(isAnimating){ log('Please wait for the current animation to finish.', 'warn'); return; }
+  if(!confirmedHead){ log('[MIDDLE] Confirmed list is empty.', 'warn'); return; }
+  isAnimating = true; setAlgoButtonsDisabled(true);
+  const arr = []; for(let p=confirmedHead;p;p=p.next) arr.push(p);
+  const n = arr.length;
+  let slowIdx = 0, fastIdx = n>1 ? 1 : 0;
+  algoStatus('Slow pointer moves 1 step, fast pointer moves 2...');
+  renderTrackArray('trackCnf', arr, 'cnf', 'S', mapFromPairs([[arr[slowIdx].pnr,'comparing'],[arr[fastIdx].pnr,'swapping']]));
+  await sleep(500);
+  while(fastIdx < n-1 && fastIdx+1 < n){
+    slowIdx++; fastIdx = Math.min(fastIdx+2, n-1);
+    renderTrackArray('trackCnf', arr, 'cnf', 'S', mapFromPairs([[arr[slowIdx].pnr,'comparing'],[arr[fastIdx].pnr,'swapping']]));
+    await sleep(500);
+  }
+  renderAll();
+  algoStatus('');
+  highlightCoach(arr[slowIdx].pnr, 'promoted');
+  isAnimating = false; setAlgoButtonsDisabled(false);
+  log(`[MIDDLE] Floyd's slow/fast pointers found the middle node in one pass: ${arr[slowIdx].name} (seat ${arr[slowIdx].seatNo})`, 'ok');
+}
+
+// ---- Handlers wired to the UI -----------------------------------------
+function handleBook(){
+  const name = document.getElementById('inName').value.trim();
+  const age = parseInt(document.getElementById('inAge').value, 10);
+  const gender = document.getElementById('inGender').value;
+  const berth = document.getElementById('inBerth').value;
+
+  if(!name){ showMsg('bookMsg','Please enter a passenger name.','err'); return; }
+  if(!age || age<1 || age>110){ showMsg('bookMsg','Please enter a valid age.','err'); return; }
+
+  const result = bookTicket(name, age, gender, berth);
+  const msgs = {
+    CONFIRMED: `Booked! Seat ${result.node.seatNo} — CONFIRMED. PNR ${result.node.pnr}`,
+    RAC: `Booked on RAC ${result.node.seatNo}. PNR ${result.node.pnr}`,
+    WAITING: `Train full — added to Waiting List (WL${result.node.seatNo}). PNR ${result.node.pnr}`
+  };
+  const kind = result.status==='CONFIRMED' ? 'ok' : result.status==='RAC' ? 'warn' : 'err';
+  showMsg('bookMsg', msgs[result.status], kind);
+  document.getElementById('inName').value='';
+  document.getElementById('inAge').value='';
+  renderAll();
+}
+
+function handleSearch(){
+  const pnr = parseInt(document.getElementById('inPnr').value, 10);
+  const box = document.getElementById('searchResult');
+  if(!pnr){ box.className='search-result show'; box.innerHTML='Enter a PNR number first.'; return; }
+  const node = searchByPNR(pnr);
+  if(!node){
+    box.className='search-result show';
+    box.innerHTML = `No record found for PNR <b>${pnr}</b>.`;
+    log(`[SEARCH] PNR ${pnr} not found (linear search across all lists)`, 'err');
+    return;
+  }
+  const statusLabel = node.status==='CNF' ? 'CONFIRMED' : node.status==='RAC' ? `RAC ${node.seatNo}` : `WAITING LIST (WL${node.seatNo})`;
+  const cls = node.status==='CNF' ? 'ok' : node.status==='RAC' ? 'warn' : 'err';
+  const color = node.status==='CNF' ? 'var(--signal-green)' : node.status==='RAC' ? 'var(--signal-amber)' : 'var(--signal-red)';
+  box.className='search-result show';
+  box.innerHTML = `<b>${escapeHtml(node.name)}</b> · ${node.age}${node.gender} · ${escapeHtml(node.berth)}<br>
+    <span class="sr-status" style="color:${color}">${statusLabel}</span>${node.status==='CNF' ? ' · Seat '+node.seatNo : ''}`;
+  log(`[SEARCH] PNR ${pnr} found → ${statusLabel}`, cls);
+}
+
+function handleCancel(){
+  const pnr = parseInt(document.getElementById('inPnr').value, 10);
+  if(!pnr){ showMsg('bookMsg','Enter a PNR to cancel.','err'); return; }
+  performCancel(pnr);
+}
+
+// Central cancel routine used by the form, the modal, and the coach quick-cancel button
+function performCancel(pnr){
+  const result = cancelTicket(pnr);
+  if(result.ok){
+    showMsg('bookMsg', `PNR ${pnr} cancelled.${result.promoted.length ? ' Chain promotion applied — highlighted in green.' : ''}`, 'ok');
+  } else {
+    showMsg('bookMsg', `PNR ${pnr} not found.`, 'err');
+  }
+  renderAll();
+  if(result.promoted.length){
+    setTimeout(() => result.promoted.forEach(p => highlightCoach(p, 'promoted')), 60);
+  }
+  return result.ok;
+}
+
+function quickCancel(pnr){
+  performCancel(pnr);
+}
+
+function handleSort(){
+  mergeSortWaitingAnimated();
+}
+function handleBubbleSort(){
+  bubbleSortRacByNameAnimated();
+}
+function handleReverse(){
+  reverseWaitingListAnimated();
+}
+function handleFindMiddle(){
+  findMiddleConfirmedAnimated();
+}
+function handleUndo(){
+  undoLastCancellation();
+  renderAll();
+}
+
+function loadSample(){
+  const sample = [
+    ['Amit Sharma',30,'M','Lower'],
+    ['Sunita Rao',45,'F','Lower'],
+    ['Rahul Verma',22,'M','Upper'],
+    ['Priya Singh',28,'F','Lower'],
+    ['Vikram Iyer',60,'M','Side-Lower'],
+    ['Anjali Nair',35,'F','Upper'],
+    ['Karan Mehta',19,'M','Upper'],
+    ['Deepa Joshi',50,'F','Lower'],
+    ['Farhan Khan',26,'M','Side-Upper'],
+    ['Meera Pillai',41,'F','Middle'],
+  ];
+  sample.forEach(([n,a,g,b]) => bookTicket(n,a,g,b));
+  renderAll();
+}
+
+function resetDemo(){
+  confirmedHead=confirmedTail=null; confirmedCount=0;
+  racHead=racTail=null; racCount=0;
+  waitHead=waitTail=null; waitCount=0;
+  historyStack=[]; pnrCounter=2500000001; totalBooked=0;
+  document.getElementById('searchResult').className='search-result';
+  document.getElementById('bookMsg').className='status-msg';
+  log('[RESET] Demo state cleared.', 't');
+  renderAll();
+}
+
+/* =====================================================================
+   INTERACTIVITY — click a coach for details, quick-cancel, keyboard,
+   and clipboard support
+   ===================================================================== */
+
+function statusMeta(node){
+  if(node.status==='CNF') return {label:'CONFIRMED', extra:`Seat ${node.seatNo}`, color:'var(--signal-green)', bg:'var(--signal-green-bg)'};
+  if(node.status==='RAC') return {label:`RAC ${node.seatNo}`, extra:'Shares a side-lower berth', color:'var(--signal-amber)', bg:'var(--signal-amber-bg)'};
+  return {label:`WAITING LIST · WL${node.seatNo}`, extra:'Promoted automatically as seats free up', color:'var(--signal-red)', bg:'var(--signal-red-bg)'};
+}
+
+function openCoachModal(pnr){
+  const node = searchByPNR(pnr);
+  if(!node) return;
+  const meta = statusMeta(node);
+  const nextText = node.next ? `PNR ${node.next.pnr} (${escapeHtml(node.next.name)})` : 'NULL — end of this list';
+  const prevRow = node.status==='RAC'
+    ? `<div class="modal-row"><span class="k">node.prev →</span><span class="v" style="font-size:11.5px;">${node.prev ? `PNR ${node.prev.pnr} (${escapeHtml(node.prev.name)})` : 'NULL — head of list'}</span></div>`
+    : '';
+
+  document.getElementById('modalBox').innerHTML = `
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <span class="modal-status" style="background:${meta.bg}; color:${meta.color}">${meta.label}</span>
+    <h3>${escapeHtml(node.name)}</h3>
+    <div class="modal-meta">${node.age} yrs · ${node.gender} · ${escapeHtml(node.berth)} berth preference</div>
+    <div class="modal-row"><span class="k">PNR</span><span class="v copyable" onclick="copyPnr(${node.pnr})">${node.pnr} ⧉</span></div>
+    <div class="modal-row"><span class="k">Status</span><span class="v" style="color:${meta.color}">${meta.extra}</span></div>
+    ${prevRow}
+    <div class="modal-row"><span class="k">node.next →</span><span class="v" style="font-size:11.5px;">${nextText}</span></div>
+    <div class="modal-actions">
+      <button class="btn-danger" onclick="performCancel(${node.pnr}); closeModal();">Cancel ticket</button>
+      <button class="btn-outline" onclick="useInSearch(${node.pnr})">Track this PNR</button>
+    </div>
+  `;
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function closeModal(){
+  document.getElementById('modalOverlay').classList.remove('show');
+}
+function closeModalOnOverlay(e){
+  if(e.target.id === 'modalOverlay') closeModal();
+}
+function useInSearch(pnr){
+  closeModal();
+  document.getElementById('inPnr').value = pnr;
+  handleSearch();
+  document.getElementById('inPnr').scrollIntoView({behavior:'smooth', block:'center'});
+}
+function copyPnr(pnr){
+  const text = String(pnr);
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(() => log(`[COPIED] PNR ${pnr} copied to clipboard`, 'ok'));
+  } else {
+    log(`PNR: ${pnr}`, 't');
+  }
+}
+
+// Event delegation: one listener per track handles clicks on any coach,
+// including ones added by future re-renders (innerHTML is replaced each time).
+['trackCnf','trackRac','trackWl'].forEach(id => {
+  document.getElementById(id).addEventListener('click', (e) => {
+    const quickBtn = e.target.closest('[data-quick-cancel]');
+    if(quickBtn){
+      e.stopPropagation();
+      quickCancel(parseInt(quickBtn.getAttribute('data-quick-cancel'), 10));
+      return;
+    }
+    const coach = e.target.closest('.coach');
+    if(coach) openCoachModal(parseInt(coach.getAttribute('data-pnr'), 10));
+  });
+});
+
+// Keyboard convenience: Enter submits the nearest relevant action
+document.getElementById('inName').addEventListener('keydown', e => { if(e.key==='Enter') handleBook(); });
+document.getElementById('inAge').addEventListener('keydown', e => { if(e.key==='Enter') handleBook(); });
+document.getElementById('inPnr').addEventListener('keydown', e => { if(e.key==='Enter') handleSearch(); });
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+
+// init
+log('[SYSTEM] Reservation engine ready — 6 confirmed berths, 4 RAC slots. Click any coach to inspect it.', 't');
+renderAll();
+</script>
+</body>
+</html>
